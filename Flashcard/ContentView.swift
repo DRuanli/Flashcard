@@ -6,81 +6,82 @@
 //
 
 import SwiftUI
-import CoreData
 
 struct ContentView: View {
-    @Environment(\.managedObjectContext) private var viewContext
-
-    @FetchRequest(
-        sortDescriptors: [NSSortDescriptor(keyPath: \Item.timestamp, ascending: true)],
-        animation: .default)
-    private var items: FetchedResults<Item>
-
+    // Sample flashcards data
+    @State private var flashcards = [
+        Flashcard(question: "What is the capital of France?", answer: "Paris"),
+        Flashcard(question: "What is the largest planet in our solar system?", answer: "Jupiter"),
+        Flashcard(question: "What is the chemical symbol for gold?", answer: "Au"),
+        Flashcard(question: "Who painted the Mona Lisa?", answer: "Leonardo da Vinci"),
+        Flashcard(question: "What is the square root of 144?", answer: "12")
+    ]
+    
+    @State private var currentIndex = 0
+    
     var body: some View {
-        NavigationView {
-            List {
-                ForEach(items) { item in
-                    NavigationLink {
-                        Text("Item at \(item.timestamp!, formatter: itemFormatter)")
-                    } label: {
-                        Text(item.timestamp!, formatter: itemFormatter)
+        VStack {
+            Text("Flashcards")
+                .font(.largeTitle)
+                .bold()
+                .padding()
+            
+            FlashcardView(flashcard: flashcards[currentIndex])
+            
+            HStack {
+                Button(action: {
+                    withAnimation {
+                        currentIndex = (currentIndex - 1 + flashcards.count) % flashcards.count
                     }
+                }) {
+                    Image(systemName: "arrow.left.circle.fill")
+                        .font(.largeTitle)
+                        .foregroundColor(.blue)
                 }
-                .onDelete(perform: deleteItems)
-            }
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    EditButton()
-                }
-                ToolbarItem {
-                    Button(action: addItem) {
-                        Label("Add Item", systemImage: "plus")
+                .padding()
+                .disabled(flashcards.count <= 1)
+                
+                Spacer()
+                
+                Text("\(currentIndex + 1) / \(flashcards.count)")
+                    .font(.title2)
+                
+                Spacer()
+                
+                Button(action: {
+                    withAnimation {
+                        currentIndex = (currentIndex + 1) % flashcards.count
                     }
+                }) {
+                    Image(systemName: "arrow.right.circle.fill")
+                        .font(.largeTitle)
+                        .foregroundColor(.blue)
                 }
+                .padding()
+                .disabled(flashcards.count <= 1)
             }
-            Text("Select an item")
-        }
-    }
-
-    private func addItem() {
-        withAnimation {
-            let newItem = Item(context: viewContext)
-            newItem.timestamp = Date()
-
-            do {
-                try viewContext.save()
-            } catch {
-                // Replace this implementation with code to handle the error appropriately.
-                // fatalError() causes the application to generate a crash log and terminate. You should not use this function in a shipping application, although it may be useful during development.
-                let nsError = error as NSError
-                fatalError("Unresolved error \(nsError), \(nsError.userInfo)")
+            .padding()
+            
+            Button(action: {
+                // Here you would implement adding new flashcards
+                // For this simple example, we'll just add a placeholder card
+                let newCard = Flashcard(question: "New Question \(flashcards.count + 1)", answer: "New Answer \(flashcards.count + 1)")
+                flashcards.append(newCard)
+            }) {
+                Text("Add New Flashcard")
+                    .foregroundColor(.white)
+                    .padding()
+                    .background(Color.green)
+                    .cornerRadius(10)
             }
-        }
-    }
-
-    private func deleteItems(offsets: IndexSet) {
-        withAnimation {
-            offsets.map { items[$0] }.forEach(viewContext.delete)
-
-            do {
-                try viewContext.save()
-            } catch {
-                // Replace this implementation with code to handle the error appropriately.
-                // fatalError() causes the application to generate a crash log and terminate. You should not use this function in a shipping application, although it may be useful during development.
-                let nsError = error as NSError
-                fatalError("Unresolved error \(nsError), \(nsError.userInfo)")
-            }
+            .padding()
         }
     }
 }
 
-private let itemFormatter: DateFormatter = {
-    let formatter = DateFormatter()
-    formatter.dateStyle = .short
-    formatter.timeStyle = .medium
-    return formatter
-}()
-
-#Preview {
-    ContentView().environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
+// Preview for ContentView
+struct ContentView_Previews: PreviewProvider {
+    static var previews: some View {
+        ContentView()
+    }
 }
